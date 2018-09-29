@@ -1,7 +1,17 @@
 {
-    "name": "erwan/data-object",
-    "description": "PHP ORM in one single file",
-    "type": "library",
-    "minimum-stability": "stable",
-    "require": {}
+  "name": "erwang/dataobject",
+  "description": "PHP ORM in one single file",
+  "authors": [
+    {
+      "name": "ErwanG",
+      "email": "erwang@users.noreply.github.com"
+    }
+  ],
+  "type": "library",
+  "minimum-stability": "stable",
+  "autoload": {
+    "psr-0": {
+      "ErwanG": "src/"
+    }
+  }
 }

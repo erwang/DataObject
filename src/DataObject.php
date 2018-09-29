@@ -1,17 +1,15 @@
 <?php
 
-namespace Kernel;
+namespace ErwanG;
 
-use Cake\Database\Exception;
 use PDO;
 
 class DataObject
 {
     private static $_pdo;
     protected static $_updateTableStructure=false;
-    private static $transaction=false;
-
     public $id;
+
     /**
      * DataObject constructor.
      */
