@@ -1,0 +1,7 @@
+{
+    "name": "erwan/data-object",
+    "description": "PHP ORM in one single file",
+    "type": "library",
+    "minimum-stability": "stable",
+    "require": {}
+}
