@@ -1,199 +1,446 @@
-# DataObject
-PHP ORM in one single file
-
-# KORM
-ORM in PHP
+# ErwanG\DataObject
 
 
-## Setup
+Class DataObject
 
-The Connection class setup must be call first.
+    @package ErwanG
 
-``` php
-$connection = \KORM\Connection::setup('name','pdo_dsn', 'username', 'password');
+Database structure :
+
+- each table must have a primary key named "id" with type varchar(20)
+
+- foreign key must be tableName_id
+
+- associative tables must be TableName1_TableName2 (where TableName1<TableName2 in alphabetic order)
+
+Example:
+
+```code
+
+Book : id, title, editor_id
+
+Author : id, firstName, lastName, birthDate
+
+Author_Book : id, author_id, book_id
+
+Editor : id, name
+
 ```
 
-A connection to a mysql database :
 
-``` php
-$connection = \KORM\Connection::setup('connectionName','mysql:host=localhost;dbname=database', 'username', 'password');
+## __construct
+
+
+DataObject constructor.
+
+
+## get
+
+
+return object with id
+
+```php
+
+$book = Book::get('ABC');
+
 ```
 
-with options :
+    @param $id
 
-``` php
-$connection = \KORM\Connection::setup('connectionName','mysql:host=localhost;dbname=database', 'username', 'password', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+    @return mixed|null
+
+
+## setPDO
+
+
+must be call to set PDO connection
+
 ```
 
-## Create a class
+DataObject::setPDO(['dbname'=>'database','host'=>'127.0.0.1','username'=>'root','password'=>'123456']);
 
-Each table in database requires a class with the same name :
-
-``` php
-class Table extends \KORM\Object{
-}
 ```
 
-_name class is converted to lower case_
-For example, to store books :
+    @param $params must contain keys dbname, hostn username, password
 
-``` php
-class Book extends \KORM\Object{
-}
+    @return PDO
+
+
+## _prepare
+
+
+    @param $query
+
+    @return \PDOStatement
+
+
+## query
+
+
+execute query and return result as DataObject
+
+must be use for SELECT queries only
+
+    @param $query
+
+    @param array $params
+
+    @return array
+
+
+## exec
+
+
+execute query and return result
+
+    @param $query
+
+    @param array $params
+
+    @return \PDOStatement
+
+
+## getTable
+
+
+return name table
+
+default value is class name
+
+    @return string
+
+
+## getColumns
+
+
+return table columns
+
+    @return mixed
+
+
+## where
+
+
+return DataObject from where query
+
+    @param $where
+
+    @param array $params
+
+    @param null $order
+
+    @param null $limit
+
+    @return DataObject[]
+
+
+## whereFirst
+
+
+return first DataObject from where query
+
+    @param $where
+
+    @param array $params
+
+    @param null $order
+
+    @return DataObject|null
+
+
+## whereLast
+
+
+return last DataObject from where query
+
+    @param $where
+
+    @param array $params
+
+    @param null $order
+
+    @return DataObject|null
+
+
+## find
+
+
+return DataObject from associative array
+
 ```
 
-The `Book` objects will be store in `book` table
+Book:find(['type'=>'thriller");
 
-## Define connection
-``` php
-Book::setConnection($connection);
-``` 
-
-## Get a row from id
-
-``` php
-$book = new Book($id);
 ```
 
-will load in `$book` all the data in table `book` with id=1
+    @param $params
 
-## Create a row
+    @param null $order
 
-``` php
-$book = new Book();
+    @param null $limit
+
+    @return array
+
+
+## findFirst
+
+
+return first DataObject from associative array
+
+    @param $params
+
+    @param $order
+
+    @param bool $create if true, create object if not find
+
+    @return DataObject|null
+
+
+## findLast
+
+
+return last DataObject from associative array
+
+    @param $params
+
+    @param $order
+
+    @return DataObject|null
+
+
+## findAll
+
+
+return all object
+
+    @param null $order
+
+    @param null $limit
+
+    @return array
+
+
+## __get
+
+
+    @param $name
+
+    @return array
+
+    @throws \Exception
+
+
+## create
+
+
+create a DataObject from associative array
+
 ```
 
-## Store an object
+$author = Author::create(['firstname'=>'Victor','lastname'=>'HUGO']);
 
-``` php
-$book = new Book($id);
-$book->title='Les Misérables';
-$book->store();
 ```
 
-## Delete an object
+    @param $params
 
-``` php
-$book = new Book($id);
-$book->delete();
+    @return DataObject
+
+
+## order
+
+
+Set string ORDER BY...
+
+    @param $order
+
+    @return string
+
+
+## limit
+
+
+Set string LIMIT...
+
+    @param $limit
+
+    @return string
+
+
+## count
+
+
+return count from where query
+
+    @param null $where
+
+    @param $params
+
+    @return int
+
+
+## isInDatabase
+
+
+return true if object is in database
+
+    @return bool
+
+
+## defineId
+
+
+return an uniq id
+
+    @return bool|string
+
+
+## hasMany
+
+
+return object with relation
+
 ```
 
-## Find objects
+$books = $victorHugo->hasMany(Book::class);
 
-### Find one Object
-
-``` php
-$book = Book::findOne(['title'=>'Les Misérables']);
 ```
 
-This return one Book (the first found)
+    @param string $class
 
-### Find multiple Objects
+    @return array
 
-``` php
-$authors = Author::find(['nationality'=>'French']);
-```
-
-This will return an array with all french authors
-
-If you need complex where clause, you can use where
-
-``` php
-$books = Book::where('pages>:nbpages',['nbpages'=>100]);
-```
-This will return an array with books with more than 100 pages
-
-If you want more complex queries :
-
-``` php
-$books = Book::query('select book.* from book,author where author.id=:author_id and pages>:nbpages and author.id=book.author_id',['nbpages'=>100,'author_id'=>1]);
-```
-This will return an array with books with more than 100 pages from author with id 1
-
-``` php
-$books = Book::getAll();
-```
-This will return all books in table
+    @throws \Exception
 
 
-## Relations
+## _getNamespace
 
-### One to many
 
-``` php
-//create a book
-$lesMiserables = new Book();
-$lesMiserables->title='Les Misérables';
-$lesMiserables->store();
+    @return string
 
-//create an author
-$hugo=new Author();
-$hugo->name='Victor Hugo';
-$hugo->store();
 
-//create a relation
-$lesMiserables->author=$hugo;
-$lesMiserables->store();
+## _getClass
 
-//get the book
-$book = new Book($lesMiserables->id);
-$author = $book->author; //return the object Author from table author
-```
 
-### many to many
+    @return string
 
-``` php
-//create tags
-$tag1=new Tag();
-$tag1->text='french';
-$tag1->store();
 
-$tag2=new Tag();
-$tag2->text='Roman';
-$tag2->store();
-$lesMiserables->tag=[$tag1,$tag2];
-$lesMiserables->store();
+## getModel
 
-//find book from many
-$booksWithFrenchTag = $tag1->book;
-```
 
-## Count
+    @param null $separator
 
-``` php
-//get the number of books
-Book::count();
+    @return mixed|string
 
-//get the number of books from an author
-Book::count(['author_id'=>$author->id]);
-```
 
-## Populate an object
+## _getClassBetween
 
-``` php
-//get data from an array
-$post=['firstname'=>'Marcel','lastname'=>'Proust'];
-//create a new author
-$author=new Author();
-$author->populate($post);
-$author->store();
-```
 
-## Truncate table
+    @param $class
 
-``` php
-//with foreign key check
-Author::truncate();
-//without foreign key check
-Author::truncate(false);
-```
+    @param bool $namespace
 
-## Drop table
+    @return string
 
-``` php
-//with foreign key check
-Author::drop();
-//without foreign key check
-Author::drop(false);
-```
+
+## store
+
+
+Store object in database
+
+    @return $this
+
+    @throws \Exception
+
+
+## delete
+
+
+delete object in database
+
+    @return bool
+
+
+## tableExists
+
+
+return true if table exists
+
+    @return boolean
+
+
+## hasColumn
+
+
+test column existence
+
+    @param string $column column name
+
+    @return boolean
+
+
+## drop
+
+
+drop table
+
+    @param bool $foreignKeyCheck
+
+    @return bool
+
+
+## truncate
+
+
+truncate table
+
+    @example CLASS::truncate(false);
+
+    @param bool $foreignKeyCheck
+
+    @return bool
+
+
+## populate
+
+
+populate object with associative array
+
+    @param $params
+
+    @return $this
+
+
+## isEqualTo
+
+
+    @param Object $object
+
+    @return bool
+
+
+## copy
+
+
+copy object without id param
+
+    @return DataObject
+
+
+## beginTransaction
+
+
+begin transaction if none has been started
+
+
+## commit
+
+
+commit transaction
+
+
+## rollback
+
+
+roll back
+
 

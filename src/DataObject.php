@@ -4,10 +4,24 @@ namespace ErwanG;
 
 use PDO;
 
+/**
+ * Class DataObject
+ * @package ErwanG
+ * Database structure :
+ * - each table must have a primary key named "id" with type varchar(20)
+ * - foreign key must be tableName_id
+ * - associative tables must be TableName1_TableName2 (where TableName1<TableName2 in alphabetic order)
+ * Example:
+ * ```code
+ * Book : id, title, editor_id
+ * Author : id, firstName, lastName, birthDate
+ * Author_Book : id, author_id, book_id
+ * Editor : id, name
+ * ```
+ */
 class DataObject
 {
     private static $_pdo;
-    protected static $_updateTableStructure=false;
     public $id;
 
     /**
@@ -17,9 +31,14 @@ class DataObject
     {
     }
 
-    public static function updateStructure(){
-        self::$_updateTableStructure=true;
-    }
+    /**
+     * return object with id
+     * ```php
+     * $book = Book::get('ABC');
+     * ```
+     * @param $id
+     * @return mixed|null
+     */
     public static function get($id)
     {
         $class=get_called_class();
@@ -37,7 +56,11 @@ class DataObject
     }
 
     /**
-     * @param $params
+     * must be call to set PDO connection
+     * ```
+     * DataObject::setPDO(['dbname'=>'database','host'=>'127.0.0.1','username'=>'root','password'=>'123456']);
+     * ```
+     * @param $params must contain keys dbname, hostn username, password
      * @return PDO
      */
     public static function setPDO($params)
@@ -57,7 +80,7 @@ class DataObject
      * @param $query
      * @return \PDOStatement
      */
-    private static function _prepare($query)
+    protected static function _prepare($query)
     {
         static $queries=[];
         if(!isset($queries[$query])){
@@ -67,6 +90,8 @@ class DataObject
     }
 
     /**
+     * execute query and return result as DataObject
+     * must be use for SELECT queries only
      * @param $query
      * @param array $params
      * @return array
@@ -82,7 +107,27 @@ class DataObject
         }
         return $stmt->fetchAll(PDO::FETCH_CLASS,get_called_class());
     }
+
     /**
+     * execute query and return result
+     * @param $query
+     * @param array $params
+     * @return \PDOStatement
+     */
+    public static function exec($query,$params=[])
+    {
+        $stmt = self::_prepare($query);
+        try {
+            $stmt->execute($params);
+        }catch(\Exception $e){
+            var_dump($e->getMessage());
+            var_dump($query);
+        }
+        return $stmt;
+    }
+    /**
+     * return name table
+     * default value is class name
      * @return string
      */
     public static function getTable()
@@ -97,6 +142,7 @@ class DataObject
     }
 
     /**
+     * return table columns
      * @return mixed
      */
     public static function getColumns()
@@ -114,11 +160,12 @@ class DataObject
     }
 
     /**
+     * return DataObject from where query
      * @param $where
      * @param array $params
      * @param null $order
      * @param null $limit
-     * @return array
+     * @return DataObject[]
      */
     public static function where($where,$params=[],$order=null,$limit=null)
     {
@@ -132,6 +179,7 @@ class DataObject
     }
 
     /**
+     * return first DataObject from where query
      * @param $where
      * @param array $params
      * @param null $order
@@ -144,6 +192,7 @@ class DataObject
     }
 
     /**
+     * return last DataObject from where query
      * @param $where
      * @param array $params
      * @param null $order
@@ -156,6 +205,10 @@ class DataObject
     }
 
     /**
+     * return DataObject from associative array
+     * ```
+     * Book:find(['type'=>'thriller");
+     * ```
      * @param $params
      * @param null $order
      * @param null $limit
@@ -177,9 +230,10 @@ class DataObject
     }
 
     /**
+     * return first DataObject from associative array
      * @param $params
      * @param $order
-     * @param bool $create
+     * @param bool $create if true, create object if not find
      * @return DataObject|null
      */
     public static function findFirst($params,$order=null,$create=false)
@@ -195,6 +249,7 @@ class DataObject
     }
 
     /**
+     * return last DataObject from associative array
      * @param $params
      * @param $order
      * @return DataObject|null
@@ -206,6 +261,7 @@ class DataObject
     }
 
     /**
+     * return all object
      * @param null $order
      * @param null $limit
      * @return array
@@ -215,15 +271,28 @@ class DataObject
         return self::query('SELECT * FROM `'. self::getTable() .'`'. self::order($order) . self::limit($limit));
     }
 
+    /**
+     * @param $name
+     * @return array
+     * @throws \Exception
+     */
     public function __get($name){
-        $class='\\Models\\'.ucfirst($name);
+        $class=$this->_getNamespace().'\\'.ucfirst($name);
         if(class_exists($class)){
             $key=$name.'_id';
-            return $class::get($this->$key);
+            if(in_array($name.'_id',self::getColumns())) {
+                return $class::get($this->$key);
+            }else{
+                return $this->hasMany($class);
+            }
         }
     }
 
     /**
+     * create a DataObject from associative array
+     * ```
+     * $author = Author::create(['firstname'=>'Victor','lastname'=>'HUGO']);
+     * ```
      * @param $params
      * @return DataObject
      */
@@ -240,7 +309,7 @@ class DataObject
         return $object;
     }
 
-        /**
+     /**
      * Set string ORDER BY...
      * @param $order
      * @return string
@@ -259,6 +328,7 @@ class DataObject
     }
 
     /**
+     * return count from where query
      * @param null $where
      * @param $params
      * @return int
@@ -290,6 +360,7 @@ class DataObject
     }
 
     /**
+     * return true if object is in database
      * @return bool
      */
     protected function isInDatabase()
@@ -304,6 +375,7 @@ class DataObject
     }
 
     /**
+     * return an uniq id
      * @return bool|string
      */
     public static function defineId()
@@ -317,23 +389,27 @@ class DataObject
     }
 
     /**
-     * return object with relation
-     * @param string $class
-     * @return array
-     */
+    * return object with relation
+     * ```
+     * $books = $victorHugo->hasMany(Book::class);
+     * ```
+    * @param string $class
+    * @return array
+    * @throws \Exception
+    */
     public function hasMany($class) {
         if (!class_exists($class)) {
             throw new \Exception('Class does not exists : ' . $class);
         }
-        if ($class::hasColumn(self::_getTable() . '_id')) {
-            return $class::find([self::_getTable() . '_id' => $this->id]);
-        }elseif($class::hasColumn(self::_getTable() . '_id')){
-        //} elseif (class_exists($this->_getClassBetween($class, true))) {
+        if ($class::hasColumn(self::getTable() . '_id')) {
+            return $class::find([self::getTable() . '_id' => $this->id]);
+        //}elseif($class::hasColumn(self::getTable() . '_id')){
+        } elseif (class_exists($this->_getClassBetween($class, true))) {
             $classBetween = $this->_getClassBetween($class, true);
-            $items = $classBetween::find([self::_getTable() . '_id' => $this->id]);
+            $items = $classBetween::find([self::getTable() . '_id' => $this->id]);
             $array = [];
             foreach ($items as $item) {
-                $field = $class::_getTable() . '_id';
+                $field = $class::getTable() . '_id';
                 $array[] = new $class($item->$field);
             }
             return $array;
@@ -357,6 +433,10 @@ class DataObject
         return isset($this->_className) ? $this->_className : get_class($this);
     }
 
+    /**
+     * @param null $separator
+     * @return mixed|string
+     */
     public function getModel($separator=null){
         if(null==$separator) {
             return $this->_getClass();
@@ -388,14 +468,6 @@ class DataObject
      */
     public function store($transaction=true) {
         $vars = get_object_vars($this);
-        /**
-         * table creation or update
-         */
-        if (self::$_updateTableStructure) {
-            self::createTable();
-            //create fields
-            $this->_createColumns();
-        }
         /**
          * convert attributes to database data
          */
@@ -470,6 +542,10 @@ class DataObject
         return $this;
     }
 
+    /**
+     * delete object in database
+     * @return bool
+     */
     public function delete()
     {
         $keys = [];
@@ -501,112 +577,10 @@ class DataObject
         $query = 'show tables like "' . self::getTable() . '"';
         return count(self::query($query)) > 0;
     }
-    /**
-     * create table
-     */
-    public static function createTable()
-    {
-
-        if(!self::tableExists()){
-            $stmt = self::_prepare('create table `'.self::getTable().'`(id varchar(20) PRIMARY KEY NOT NULL)');
-            return ($stmt->execute());
-        };
-        return true;
-    }
-
-
-    private static function _getColumnType($value)
-    {
-        $type = 'longtext';
-        switch (gettype($value)) {
-            case 'boolean':
-                $type = 'tinyint(1)';
-                break;
-            case 'integer':
-                $type = 'int(11)';
-                break;
-            case 'double':
-                $type = 'float';
-                break;
-            case 'object':
-                $type='varchar(20)';
-                break;
-            case 'string':
-                if (\DateTime::createFromFormat('Y-m-d', $value)) {
-                    $type = 'date';
-                } elseif (\DateTime::createFromFormat('H:i:s', $value) or \DateTime::createFromFormat('H:i', $value)) {
-                    $type = 'time';
-                } elseif (\DateTime::createFromFormat('Y-m-d H:i:s', $value) or \DateTime::createFromFormat('Y-m-d H:i', $value)) {
-                    $type = 'datetime';
-                } elseif (is_numeric($value)) {
-                    if (intval($value) == $value) {
-                        return self::_getColumnType(intval($value));
-                    } else {
-                        return self::_getColumnType(floatval($value));
-                    }
-                } elseif (strlen($value) > 250) {
-                    $type = 'longtext';
-                } else {
-                    $type = 'varchar(250)';
-                }
-        }
-        return $type;
-    }
-
-    /**
-     * create columns
-     */
-    private function _createColumns()
-    {
-        $columns= self::getColumns();
-        $columnsTable=[];
-        foreach($columns as $column){
-            $columnsTable[$column['Field']]=$column;
-        }
-        unset($columns);
-        foreach ($this as $key=>$value) {
-            if($key!=='id') {
-                if(is_object($value)){
-                    $key.='_id';
-                }
-                if (!isset($columnsTable[$key])) {
-                    $query = 'ALTER TABLE `' . self::getTable() . '` ADD `' . $key . '` ' . self::_getColumnType($value);
-                } else {
-                    $query = 'ALTER TABLE `' . self::getTable() . '` CHANGE `' . $key . '` `' . $key . '` ' . self::_getColumnType($value);
-                }
-                try {
-                    $stmt = self::_prepare($query);
-                    $stmt->execute();
-                }catch (Exception $e){
-                    var_dump($columnsTable);
-                    var_dump($this);
-                    var_dump($key);
-                    var_dump($value);
-                    var_dump($query);
-                    echo $e->getMessage();
-                    throw $e;
-                }
-
-                if(is_object($value)){
-                    $class=get_class($value);
-                    $query = 'ALTER TABLE `'.self::getTable().'` ADD FOREIGN KEY (`'.$key.'`) REFERENCES `'.$class::getTable().'`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;' ;
-                    $stmt = self::_prepare($query);
-                    try {
-                        $stmt->execute();
-                    }catch(\Exception $e){
-                        var_dump($e->getMessage());
-                        var_dump($query);
-                        exit();
-                    }
-                }
-            }
-        }
-    }
 
     /**
      * test column existence
      * @param string $column column name
-     * @param string $table table name
      * @return boolean
      */
     public static function hasColumn($column) {
@@ -639,12 +613,12 @@ class DataObject
 
     /**
      * truncate table
+     * @example CLASS::truncate(false);
      * @param bool $foreignKeyCheck
      * @return bool
      */
     public function truncate($foreignKeyCheck=false)
     {
-
         if (!$foreignKeyCheck) {
             self::_getPDO()->exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
@@ -682,7 +656,9 @@ class DataObject
             return false;
         }
         foreach($vars as$key=>$value){
-            if(!isset($object->$key) or $this->$key!==$object->$key){
+            if(!property_exists($object,$key) or $this->$key!==$object->$key)
+            {
+                var_dump($object->$key,$this->$key);
                 return false;
             }
         }
@@ -690,6 +666,7 @@ class DataObject
     }
 
     /**
+     * copy object without id param
      * @return DataObject
      */
     public function copy(){
@@ -699,18 +676,27 @@ class DataObject
         return $class::create($vars);
     }
 
+    /**
+     * begin transaction if none has been started
+     */
     public static function beginTransaction(){
         if(!self::_getPDO()->inTransaction()) {
             self::_getPDO()->beginTransaction();
         }
     }
 
+    /**
+     * commit transaction
+     */
     public static function commit(){
         if(self::_getPDO()->inTransaction()) {
             self::_getPDO()->commit();
         }
     }
 
+    /**
+     * roll back
+     */
     public static function rollback()
     {
         if(self::_getPDO()->inTransaction()){

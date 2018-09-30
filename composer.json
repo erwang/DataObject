@@ -10,8 +10,14 @@
   "type": "library",
   "minimum-stability": "stable",
   "autoload": {
-    "psr-0": {
-      "ErwanG": "src/"
+    "psr-4": {
+      "ErwanG\\": "src/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": { "ErwanG\\Tests\\": "tests/" }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7"
   }
 }
