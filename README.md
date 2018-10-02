@@ -27,6 +27,8 @@ Editor : id, name
 
 ```
 
+More examples in examples.php;
+
 
 ## __construct
 
