@@ -99,7 +99,8 @@ $books = $victorHugo->hasMany(Book::class);
 $victorHugo->birthdate = '1802-02-26';
 $victorHugo->store();
 
-$data = ['firtstname'=>'Émile','lastname'=>'ZOLA','birthdate'=>'1840-04-02'];
+$data = ['firstname'=>'Émile','lastname'=>'ZOLA','birthdate'=>'1840-04-02'];
 $emileZola=Author::create();
 //populate object with associative array
 $emileZola->populate($data)->store();
+
