@@ -139,12 +139,11 @@ final class DataObject extends TestCase
     }
     */
 
-    /*
     public function testCount()
     {
-
+        $victorHugo=Author::findFirst(['firstname'=>'Victor','lastname'=>'Hugo']);
+        $this->assertEquals(1,Author_Book::count('author_id=?', [$victorHugo->id]));
     }
-    */
 
     /*
     public function testStore()

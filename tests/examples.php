@@ -99,6 +99,9 @@ $books = $victorHugo->hasMany(Book::class);
 $victorHugo->birthdate = '1802-02-26';
 $victorHugo->store();
 
+//get number of books written by Victor Hugo
+$count = Author_Book::count( ['author_id'=>$victorHugo->id]);
+
 $data = ['firstname'=>'Émile','lastname'=>'ZOLA','birthdate'=>'1840-04-02'];
 $emileZola=Author::create();
 //populate object with associative array
