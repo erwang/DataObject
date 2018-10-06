@@ -384,9 +384,8 @@ class DataObject
      * return an uniq id
      * @return bool|string
      */
-    public static function defineId()
+    public static function defineId($length=8)
     {
-        $length = 8;
         do {
             $id = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
         } while (null != self::get($id));
