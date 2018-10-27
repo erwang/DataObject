@@ -32,7 +32,6 @@ final class DataObject extends TestCase
         ADD PRIMARY KEY (`id`);');
         \ErwanG\DataObject::commit();
 
-
         $victorHugo = Author::create(['firstname'=>'Victor','lastname'=>'HUGO'])->store();
         $lesMiserables = Book::create(['title'=>'Les Misérables'])->store();
         $lesMiserables->author=[$victorHugo];
@@ -44,6 +43,14 @@ final class DataObject extends TestCase
     {
     }
     */
+
+    /**
+     * @expectedException Exception
+     */
+    public function testExec()
+    {
+       $this->expectException(Book::query('select * from badTable where title=?', ['Les Misérables']));
+    }
 
     /*
     public function testWhere()
@@ -143,6 +150,7 @@ final class DataObject extends TestCase
     {
         $victorHugo=Author::findFirst(['firstname'=>'Victor','lastname'=>'Hugo']);
         $this->assertEquals(1,Author_Book::count('author_id=?', [$victorHugo->id]));
+        $this->assertEquals(1,Author::count(['id'=>$victorHugo->id,'birthdate'=>null]));
     }
 
     /*
@@ -180,13 +188,29 @@ final class DataObject extends TestCase
     }
     */
 
-    /*
     public function testPopulate()
     {
+        $charlesBaudelaire = Author::create();
+        $data = ['firstname'=>'Charles','lastname'=>'BAUDELAIRE'];
+        $charlesBaudelaire->populate($data);
+        $this->assertEquals('Charles',$charlesBaudelaire->firstname);
+        $this->assertEmpty($charlesBaudelaire->birthdate);
 
     }
-    */
 
+    public function testFromJson()
+    {
+        $emileZola = Author::create();
+        $object = new \stdClass();
+        $object->firstname = 'Émile';
+        $object->lastname='Zola';
+        $emileZola->fromJson(json_encode($object));
+        $emileZola->store();
+        $this->assertEquals($emileZola->firstname,$object->firstname);
+        $this->assertEquals($emileZola->lastname,$object->lastname);
+        $this->assertEmpty($emileZola->birthdate);
+    }
+    
     /*
     public function testSetPDO()
     {
@@ -241,10 +265,11 @@ final class DataObject extends TestCase
     {
 
         $victorHugo = Author::findFirst(['firstname'=>'Victor','lastname'=>'HUGO']);
-        $this->assertInstanceOf(\ErwanG\Tests\Author::class,$victorHugo);
+        $this->assertInstanceOf(Author::class,$victorHugo);
         $lesMiserables = Book::findFirst(['title'=>'Les Misérables']);
-        $this->assertInstanceOf(\ErwanG\Tests\Book::class,$lesMiserables);
-
+        $this->assertInstanceOf(Book::class,$lesMiserables);
+        $this->assertNull(Book::findFirst(['title'=>'Les']));
+        $this->assertInstanceOf(Book::class,Book::findLast(['title'=>'Les Misérables']));
     }
 
     /*
@@ -282,10 +307,11 @@ final class DataObject extends TestCase
     }
     */
 
-    /*
+
     public function testGetModel()
     {
+        $victorHugo = Author::findFirst(['firstname'=>'Victor','lastname'=>'HUGO']);
+        $this->assertEquals('ErwanG\\Tests\\Author',$victorHugo->getModel());
 
     }
-    */
 }

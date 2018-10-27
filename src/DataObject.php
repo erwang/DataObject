@@ -100,12 +100,7 @@ class DataObject
     public static function query($query, $params = [])
     {
         $stmt = self::_prepare($query);
-        try {
-            $stmt->execute($params);
-        } catch (\Exception $e) {
-            var_dump($e->getMessage());
-            var_dump($query);
-        }
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_CLASS, get_called_class());
     }
 
@@ -118,12 +113,7 @@ class DataObject
     public static function exec($query, $params = [])
     {
         $stmt = self::_prepare($query);
-        try {
-            $stmt->execute($params);
-        } catch (\Exception $e) {
-            var_dump($e->getMessage());
-            var_dump($query);
-        }
+        $stmt->execute($params);
         return $stmt;
     }
 
@@ -204,6 +194,23 @@ class DataObject
         return count($result) > 0 ? end($result) : null;
     }
 
+    private static function _createWhereFromParams($params,&$values)
+    {
+        $where = [];
+        $p = [];
+        foreach ($params as $k => $v) {
+            if ($v === null) {
+                $where[] = '`' . $k . '` is null';
+            } else {
+                $where[] = '`' . $k . '`=?';
+                $p[] = $v;
+            }
+        }
+        $values = $p;
+        return implode(' and ', $where);
+
+    }
+
     /**
      * return DataObject from associative array
      * ```
@@ -216,17 +223,7 @@ class DataObject
      */
     public static function find($params, $order = null, $limit = null)
     {
-        $where = [];
-        $p = [];
-        foreach ($params as $k => $v) {
-            if ($v === null) {
-                $where[] = '`' . $k . '` is null';
-            } else {
-                $where[] = '`' . $k . '`=?';
-                $p[] = $v;
-            }
-        }
-        return self::where(implode(' and ', $where), $p, $order, $limit);
+        return self::where(self::_createWhereFromParams($params,$p), $p, $order, $limit);
     }
 
     /**
@@ -254,7 +251,7 @@ class DataObject
      * @param $order
      * @return DataObject|null
      */
-    public function findLast($params, $order)
+    public function findLast($params, $order=null)
     {
         $result = self::find($params, $order);
         return count($result) > 0 ? end($result) : null;
@@ -339,19 +336,7 @@ class DataObject
     public static function count($where = null, $params = null)
     {
         if (is_array($where)) {
-            $params = $where;
-            $where = [];
-            $p = [];
-            foreach ($params as $k => $v) {
-                if ($v === null) {
-                    $where[] = '`' . $k . '` is null';
-                } else {
-                    $where[] = '`' . $k . '`=?';
-                    $p[] = $v;
-                }
-            }
-            $params = $p;
-            $where = implode(' and ', $where);
+            $where = self::_createWhereFromParams($where,$params);
         }
         if (null !== $where) {
             $where = ' WHERE ' . $where;
@@ -390,7 +375,6 @@ class DataObject
             $id = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
         } while (null != self::get($id));
         return $id;
-
     }
 
     /**
@@ -658,6 +642,19 @@ class DataObject
         return $this;
     }
 
+
+    public function fromJson($json)
+    {
+        $object = json_decode($json);
+        $vars = get_object_vars($object);
+        $columns = self::getColumns();
+        foreach ($columns as $column) {
+            $field = $column['Field'];
+            if (isset($object->$field)) {
+                $this->$field = $object->$field;
+            }
+        }
+    }
     /**
      * @param Object $object
      * @return bool
@@ -670,7 +667,6 @@ class DataObject
         }
         foreach ($vars as $key => $value) {
             if (!property_exists($object, $key) or $this->$key !== $object->$key) {
-                var_dump($object->$key, $this->$key);
                 return false;
             }
         }
