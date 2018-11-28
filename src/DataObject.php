@@ -24,6 +24,7 @@ class DataObject
 {
     private static $_pdo;
     public $id;
+    protected static $_autoincrement=false;
 
     /**
      * DataObject constructor.
@@ -42,6 +43,9 @@ class DataObject
      */
     public static function get($id)
     {
+		if(null==$id){
+			return null;
+		}
         $class = get_called_class();
         $query = 'SELECT * FROM `' . $class::getTable() . '` WHERE id' . ' = ?';
         $objects = self::query($query, [$id]);
@@ -371,9 +375,16 @@ class DataObject
      */
     public static function defineId($length=8)
     {
-        do {
-            $id = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
-        } while (null != self::get($id));
+
+        $class = get_called_class();
+        if($class::$_autoincrement) {
+            $status = self::query('SHOW TABLE STATUS WHERE name=?',[self::getTable()]);
+            $id = $status[0]->Auto_increment;
+        }else {
+            do {
+                $id = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
+            } while (null != self::get($id));
+        }
         return $id;
     }
 
@@ -559,6 +570,7 @@ class DataObject
         }
         $stmt = self::_prepare('DELETE FROM `' . self::getTable() . '` WHERE `' . implode('` = ? AND `', $keys) . '` = ?');
         $result = $stmt->execute($params);
+        //var_dump('DELETE FROM `' . self::getTable() . '` WHERE `' . implode('` = ? AND `', $keys) . '` = ?');
         return $result;
     }
 
@@ -613,7 +625,7 @@ class DataObject
      * @param bool $foreignKeyCheck
      * @return bool
      */
-    public function truncate($foreignKeyCheck = false)
+    public static function truncate($foreignKeyCheck = false)
     {
         if (!$foreignKeyCheck) {
             self::_getPDO()->exec('SET FOREIGN_KEY_CHECKS = 0;');
