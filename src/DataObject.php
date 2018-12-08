@@ -279,15 +279,16 @@ class DataObject
      */
     public function __get($name)
     {
-        $class = $this->_getNamespace() . '\\' . ucfirst($name);
+        $class = '\\'.$this->_getNamespace() . '\\' . ucfirst($name);
         if (class_exists($class)) {
             $key = $name . '_id';
-            if (in_array($name . '_id', self::getColumns())) {
+            if (self::hasColumn($key)) {
                 return $class::get($this->$key);
             } else {
                 return $this->hasMany($class);
             }
         }
+        return null;
     }
 
     /**
