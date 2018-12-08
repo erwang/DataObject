@@ -25,6 +25,8 @@ class DataObject
     private static $_pdo;
     public $id;
     protected static $_autoincrement=false;
+    protected static $_classSeparator='_';
+
 
     /**
      * DataObject constructor.
@@ -32,6 +34,17 @@ class DataObject
     protected function __construct()
     {
     }
+
+    /**
+     * set separator between linked class
+     * default value is "_"
+     * @param $separator
+     */
+    public static function setSeparator($separator)
+    {
+        self::$_classSeparator=$separator;
+    }
+
 
     /**
      * return object with id
@@ -462,9 +475,9 @@ class DataObject
         $array = [join('', array_slice(explode('\\', $class), -1)), join('', array_slice(explode('\\', $thisClass), -1))];
         sort($array);
         if ($namespace) {
-            return $nsp . '\\' . implode('_', $array);
+            return $nsp . '\\' . implode(self::$_classSeparator, $array);
         } else {
-            return implode('_', $array);
+            return implode(self::$_classSeparator, $array);
         }
     }
 
