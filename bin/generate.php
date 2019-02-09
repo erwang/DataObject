@@ -1,7 +1,12 @@
 #!/usr/bin/php
 <?php
 
-include('../vendor/autoload.php');
+foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.php', __DIR__ . '/vendor/autoload.php') as $file) {
+    if (file_exists($file)) {
+        include($file);
+        break;
+    }
+}
 
 $command = new \Commando\Command();
 

@@ -19,12 +19,14 @@
       "ErwanG\\Tests\\": "tests/"
     }
   },
-  "require-dev": {
-    "phpunit/phpunit": "^7",
-    "phpunit/php-code-coverage": "^6.1",
+  "require": {
     "nategood/commando": "*",
     "seld/cli-prompt": "*",
     "nette/php-generator": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7",
+    "phpunit/php-code-coverage": "^6.1",
   },
   "bin":
     [
