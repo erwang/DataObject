@@ -211,6 +211,16 @@ class DataObject
         return count($result) > 0 ? end($result) : null;
     }
 
+    public static function whereInDatabase($table,$where, $params = [], $order = null, $limit = null)
+    {
+        if ($where === '') {
+            $query = 'SELECT * FROM `' . $table . '` ' . self::order($order) . self::limit($limit);
+        } else {
+            $query = 'SELECT * FROM `' . $table . '` WHERE ' . $where . self::order($order) . self::limit($limit);
+        }
+        return self::query($query, $params);
+    }
+
     private static function _createWhereFromParams($params,&$values)
     {
         $where = [];
@@ -262,6 +272,7 @@ class DataObject
         return null;
     }
 
+
     /**
      * return last DataObject from associative array
      * @param $params
@@ -284,6 +295,24 @@ class DataObject
     {
         return self::query('SELECT * FROM `' . self::getTable() . '`' . self::order($order) . self::limit($limit));
     }
+
+    public static function findInDatabase($table,$params=[],$order=null,$limit=null)
+    {
+        return self::whereInDatabase($table,self::_createWhereFromParams($params,$p),$p,$order,$limit);
+    }
+
+    public static function findFirstInDatabase($table,$params, $order = null, $create = false)
+    {
+        $result = self::findInDatabase($table,$params, $order, '0,1');
+        if (isset($result[0])) {
+            return $result[0];
+        }
+        if ($create) {
+            return self::create($params);
+        }
+        return null;
+    }
+
 
     /**
      * @param $name
@@ -394,6 +423,9 @@ class DataObject
         if($class::$_autoincrement) {
             $status = self::query('SHOW TABLE STATUS WHERE name=?',[self::getTable()]);
             $id = $status[0]->Auto_increment;
+            if(null==$id){
+                $id=1;git di
+            }
         }else {
             do {
                 $id = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
@@ -518,7 +550,7 @@ class DataObject
             }
             $this->id = self::defineId();
             $vars[] = $this->id;
-            $query = 'insert into `' . self::getTable() . '`(`' . implode('`, `', $keys) . '`) values (?' . str_repeat(', ?', sizeof($vars) - 1) . ')';
+            $query = 'insert into `' . self::getTable() . '`(`' . implode('`, `', $keys) . '`) values (?' . str_repeat(', ?', count($vars) - 1) . ')';
             $statement = self::_prepare($query);
             $result = $statement->execute(array_values($vars));
             if ($transaction) {
