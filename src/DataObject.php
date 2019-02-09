@@ -424,7 +424,7 @@ class DataObject
             $status = self::query('SHOW TABLE STATUS WHERE name=?',[self::getTable()]);
             $id = $status[0]->Auto_increment;
             if(null==$id){
-                $id=1;git di
+                $id=1;
             }
         }else {
             do {
