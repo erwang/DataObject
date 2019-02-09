@@ -15,10 +15,19 @@
     }
   },
   "autoload-dev": {
-    "psr-4": { "ErwanG\\Tests\\": "tests/" }
+    "psr-4": {
+      "ErwanG\\Tests\\": "tests/"
+    }
   },
   "require-dev": {
     "phpunit/phpunit": "^7",
-    "phpunit/php-code-coverage": "^6.1"
-  }
+    "phpunit/php-code-coverage": "^6.1",
+    "nategood/commando": "*",
+    "seld/cli-prompt": "*",
+    "nette/php-generator": "*"
+  },
+  "bin":
+    [
+      "bin/generate.php"
+    ]
 }

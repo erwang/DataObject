@@ -2,9 +2,13 @@
 
 namespace ErwanG\Tests;
 
-use ErwanG\DataObject;
-
-class Editor extends DataObject
+class Editor extends \ErwanG\DataObject
 {
-    protected static $_autoincrement=true;
+	protected static $_autoincrement = true;
+
+	/** @var string */
+	public $id;
+
+	/** @var string */
+	public $name;
 }

@@ -1,15 +1,15 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: erwan
- * Date: 30/09/18
- * Time: 10:30
- */
 
 namespace ErwanG\Tests;
 
-
 class Author_Book extends \ErwanG\DataObject
 {
+	/** @var string */
+	public $id;
 
+	/** @var string */
+	public $author_id;
+
+	/** @var string */
+	public $book_id;
 }

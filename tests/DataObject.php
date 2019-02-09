@@ -9,21 +9,15 @@ final class DataObject extends TestCase
 
     protected function setUp()
     {
-        \ErwanG\DataObject::setPDO(['dbname'=>'test_orm','host'=>'127.0.0.1','username'=>'root','password'=>'123456']);
+        $pdo=\ErwanG\DataObject::setPDO(['dbname'=>'test_orm','host'=>'127.0.0.1','username'=>'root','password'=>'123456']);
 
         Author_Book::truncate(false);
         Book::truncate(false);
         Author::truncate(false);
 
-        Editor::Drop(false);
+        Editor::truncate(false);
 
-        \ErwanG\DataObject::beginTransaction();
-        \ErwanG\DataObject::exec('CREATE TABLE `Editor` (
-        `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
-        `name` varchar(250) NOT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;');
-        //\ErwanG\DataObject::exec('ALTER TABLE `Editor` ADD PRIMARY KEY (`id`);');
-        \ErwanG\DataObject::commit();
+
 
         $victorHugo = Author::create(['firstname'=>'Victor','lastname'=>'HUGO'])->store();
         $lesMiserables = Book::create(['title'=>'Les Misérables'])->store();
@@ -269,6 +263,12 @@ final class DataObject extends TestCase
         $this->assertInstanceOf(Book::class,Book::findLast(['title'=>'Les Misérables']));
     }
 
+
+    public function testFindInDatabase()
+    {
+        $victorHugo = \ErwanG\DataObject::findInDatabase('User',['firstname'=>'Victor','lastname'=>'HUGO']);
+        $this->assertInstanceOf(\ErwanG\DataObject::class,$victorHugo);
+    }
     /*
     public function testHasColumn()
     {
