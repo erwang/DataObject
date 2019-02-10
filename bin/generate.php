@@ -53,38 +53,34 @@ if(null==$command['t']){
 }
 foreach($tables as $table) {
     $file = new Nette\PhpGenerator\PhpFile;
-    if(!file_exists($table.'.php')){
+    if(!file_exists($table.'.php')) {
         $file->addComment('This file is auto-generated.');
         /** @var Nette\PhpGenerator\ClassType $class */
         $class = new Nette\PhpGenerator\ClassType($table);
         $class->setExtends('\ErwanG\DataObject');
         $properties = [];
-    }else{
-        require($table.'.php');
-        $class = Nette\PhpGenerator\ClassType::from('\\'.$command['n'].'\\'.$table);
-    }
-    $query = 'SHOW COLUMNS FROM `' . $table . '`;';
-    $columns = $pdo->query($query)->fetchAll();
-    foreach ($columns as $column) {
-        try {
-            $class->getProperty($column['Field']);
-        }
-        catch(\Nette\InvalidArgumentException $e){
-                switch($column){
+        $query = 'SHOW COLUMNS FROM `' . $table . '`;';
+        $columns = $pdo->query($query)->fetchAll();
+        foreach ($columns as $column) {
+            try {
+                $class->getProperty($column['Field']);
+            } catch (\Nette\InvalidArgumentException $e) {
+                switch ($column) {
                     default:
-                        $type='string';
+                        $type = 'string';
                 }
                 $property = $class->addProperty($column['Field'])
                     ->setVisibility('public')
-                    ->setComment('@var '.$type);
+                    ->setComment('@var ' . $type);
+            }
         }
-    }
-    if(null!==$command['n']){
-        $namespace = $file->addNamespace($command['n']);
-        $namespace->add($class);
-    }else{
-        $file->addNamespace($class);
-    }
+        if (null !== $command['n']) {
+            $namespace = $file->addNamespace($command['n']);
+            $namespace->add($class);
+        } else {
+            $file->addNamespace($class);
+        }
 
-    file_put_contents($table.'.php',$file);
+        file_put_contents($table . '.php', $file);
+    }
 }
