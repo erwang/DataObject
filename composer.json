@@ -20,9 +20,9 @@
     }
   },
   "require": {
-    "nategood/commando": "*",
-    "seld/cli-prompt": "*",
-    "nette/php-generator": "*"
+    "nategood/commando": "0.3.*",
+    "seld/cli-prompt": "1.0.*",
+    "nette/php-generator": "3.2.*"
   },
   "require-dev": {
     "phpunit/phpunit": "^7",
